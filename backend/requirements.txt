@@ -1,0 +1,15 @@
+# VoiceGuard AI — backend deps
+# Phase 1a (runs NOW, no ML, no GPU): just these light packages.
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+pydantic-settings>=2.3
+python-multipart>=0.0.9
+reportlab>=4.0            # PDF forensic reports
+
+# Tests
+pytest>=8.0
+httpx>=0.27
+
+# Phase 1b+ (real AI model) lives in requirements-ml.txt — install that
+# only when you're ready for the ~2 GB torch download.

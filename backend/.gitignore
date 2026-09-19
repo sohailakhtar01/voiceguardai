@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.voiceprints.json
+.tmp_uploads/
+models/
+ml/data/
+ml/data_india/
+*.pth
+*.onnx
+.pytest_cache/

@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# VoiceGuard AI 🛡️
 
-## Getting Started
+**Real-time detection & prevention of voice-cloning impersonation attacks** — India-first, explainable.
+Smart India Hackathon 2026 · Problem Statement **SIH26104** (AICTE Cyber Security Cell).
 
-First, run the development server:
+> When a voice can be faked, the interaction itself must be verified. VoiceGuard runs
+> three checks on a call and returns one explainable risk score — and tells you *why*.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## What it does
+1. **Fake voice?** — AI-clone / synthetic-audio detection (wav2vec2)
+2. **Right person?** — speaker verification against a trusted voiceprint (ECAPA-TDNN)
+3. **Scam intent?** — speech-to-text + scam-word detection in **Hindi, Tamil, Telugu, Kannada, Bengali, Marathi & code-mixed** speech
+
+→ fused into a calibrated **risk score** (🟢 low → 🔴 critical) with **evidence** and an **adaptive response**, plus a downloadable **forensic report** (PDF/JSON).
+
+## Structure
+```
+voiceguardai/
+├── src/app/            Next.js dashboard (frontend)
+└── backend/            Python FastAPI detection API
+    ├── app/
+    │   ├── detectors/  Check 1 — fake voice (mock | wav2vec2)
+    │   ├── identity/   Check 2 — speaker verification + voiceprint registry
+    │   ├── intent/     Check 3 — Hindi/code-mixed scam-intent
+    │   ├── risk/       Layer 4 — explainable risk fusion
+    │   └── report/     forensic report (JSON + PDF)
+    ├── ml/             Phase 5 training (ASVspoof + India dataset)
+    └── scripts/        dataset download, model verify
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Quickstart
+**Backend** (runs immediately, no ML needed — uses a mock engine):
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload        # http://localhost:8000/docs
+pytest -q                            # tests
+```
+**Frontend:**
+```bash
+npm install
+npm run dev                          # http://localhost:3000
+```
+Open the dashboard, click the **🇮🇳 Hindi scam** example → **Analyze**.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Turn on the real AI model
+```bash
+cd backend
+pip install -r requirements-ml.txt   # ~2 GB (torch)
+python scripts/verify_model.py       # confirm it loads
+# then set in backend/.env:  DETECTOR_ENGINE=wav2vec2
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/analyze/voice` | Check 1 only |
+| `POST /api/analyze/intent` | Check 3 (`transcript` text or `audio`) |
+| `POST /api/analyze/full` | full pipeline → risk + case metadata |
+| `POST /api/report/pdf` | downloadable PDF forensic report |
+| `POST /api/voices/register` · `GET /api/voices` · `DELETE /api/voices/{name}` | voiceprint registry |
 
-## Learn More
+## Honest notes
+- The **India-language model** is trained separately on free GPU — see `backend/ml/README.md`.
+- No detector is 100% on unseen fakes; we report **real** metrics, not a fake "99%".
+- Free & open-source throughout; the whole demo runs locally at ₹0.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [`BUILD_PLAN.md`](BUILD_PLAN.md) for the phase-by-phase status.
+"# voiceguardai" 

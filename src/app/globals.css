@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
+/* ---- VoiceGuard AI — clean premium light theme (ElevenLabs-inspired) ---- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #ffffff;
+  --bg-subtle: #fafafa;
+  --panel: #ffffff;
+  --border: #ebebeb;
+  --border-strong: #dcdcdc;
+  --text: #0a0a0a;
+  --muted: #6b7280;
+  --faint: #9ca3af;
+  --accent: #0a0a0a;        /* primary action = black */
+  --safe: #059669;          /* real human */
+  --safe-soft: #ecfdf5;
+  --danger: #dc2626;        /* AI-generated */
+  --danger-soft: #fef2f2;
+  --warn: #b45309;          /* partly AI */
+  --warn-soft: #fffbeb;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;            /* force light regardless of OS setting */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #0a0a0a;
+  color: #ffffff;
+}
+
+/* Keyboard focus ring (accessibility) */
+:focus-visible {
+  outline: 2px solid #0a0a0a;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Analysing-state equalizer */
+@keyframes eq {
+  0%, 100% { transform: scaleY(0.3); }
+  50%      { transform: scaleY(1); }
+}
+.eq-bar { animation: eq 1s ease-in-out infinite; transform-origin: bottom; }
+
+/* Result reveal */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-bar, .rise, * { animation: none !important; transition: none !important; }
 }
