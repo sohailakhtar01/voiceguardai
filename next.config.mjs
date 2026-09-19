@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  output: "standalone", // minimal, self-contained image for Docker deployment
 };
 
 export default nextConfig;

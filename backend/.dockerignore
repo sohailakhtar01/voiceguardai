@@ -1,0 +1,10 @@
+.env
+.env.example
+.pytest_cache
+__pycache__
+*.pyc
+tests
+ml
+scripts
+supabase_schema.sql
+.voiceprints.json
