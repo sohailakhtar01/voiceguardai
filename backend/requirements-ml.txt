@@ -1,12 +1,21 @@
 # VoiceGuard AI — heavy ML deps (Phase 1b onward).
 # Install when ready:  pip install -r requirements-ml.txt
 # Big download (~2 GB). Then set DETECTOR_ENGINE=wav2vec2 in .env
+# Phase 1b (Real wav2vec2 detection)
 torch>=2.2
 torchaudio>=2.2
 transformers>=4.44
 soundfile>=0.12
 librosa>=0.10
+imageio-ffmpeg>=0.4.9       # Audio format fallback (WhatsApp, Opus, M4A)
 
-# Phase 5 (dataset download + training)
+# Phase 2 (Speaker voiceprint verification)
+speechbrain>=1.0
+
+# Phase 3 (Audio transcription STT)
+faster-whisper>=1.0
+
+# Phase 5 (Dataset download + training)
 kagglehub>=0.3
 scikit-learn>=1.4
+
