@@ -17,16 +17,6 @@
   --danger-soft: #fef2f2;
   --warn: #b45309;          /* partly AI */
   --warn-soft: #fffbeb;
-
-  /* Landing-page accents (Sarvam-style gradient hero + use-case cards) */
-  --hero-grad: linear-gradient(135deg, #4338ca 0%, #6d28d9 55%, #7c3aed 100%);
-  --cta-grad: linear-gradient(160deg, #0a0a0a 0%, #1e1b4b 100%);
-  --card-blue: linear-gradient(160deg, #eef2ff 0%, #e0e7ff 100%);
-  --card-blue-border: #c7d2fe;
-  --card-orange: linear-gradient(160deg, #fff7ed 0%, #ffedd5 100%);
-  --card-orange-border: #fed7aa;
-  --card-green: linear-gradient(160deg, #ecfdf5 0%, #d1fae5 100%);
-  --card-green-border: #a7f3d0;
 }
 
 @theme inline {
@@ -38,7 +28,6 @@
 
 html {
   color-scheme: light;            /* force light regardless of OS setting */
-  scroll-behavior: smooth;
 }
 
 body {
@@ -77,5 +66,4 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .eq-bar, .rise, * { animation: none !important; transition: none !important; }
-  html { scroll-behavior: auto; }
 }

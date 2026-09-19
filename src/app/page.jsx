@@ -30,78 +30,6 @@ const EXAMPLES = [
   { label: "Normal call", text: "Hey, are we still meeting for lunch tomorrow afternoon?" },
 ];
 
-// Real scam patterns pulled from app/intent/patterns.py, one per triggered category
-const PATTERN_CARDS = [
-  {
-    tone: "blue",
-    title: "OTP + money request",
-    desc: "The single most reliable fraud signal — a genuine bank, relative, or officer never needs both your OTP and a transfer in the same call.",
-    tags: ["otp_request", "money_request", "urgency"],
-    sample: "Sir main bank se bol raha hoon, turant OTP batao aur paise transfer karo, urgent hai",
-    note: "Always force-escalated to HIGH/CRITICAL, regardless of how real the voice sounds.",
-  },
-  {
-    tone: "orange",
-    title: "Authority impersonation",
-    desc: "Callers claiming to be a bank manager, police, or CBI officer, paired with manufactured urgency to stop you from thinking it through.",
-    tags: ["authority_claim", "urgency"],
-    sample: "Bank se baat kar raha hoon, abhi turant apna account verify kijiye warna block ho jayega",
-    note: "Matched in Hindi, English, and 6 more Indian languages.",
-  },
-  {
-    tone: "green",
-    title: "Family emergency + secrecy",
-    desc: "A cloned voice of a relative, asking for quiet, urgent help — engineered so you don't stop to verify with anyone else first.",
-    tags: ["secrecy", "money_request", "urgency"],
-    sample: "Beta, please kisi ko mat batana, mujhe abhi paise ki zaroorat hai, main museebat mein hoon",
-    note: "Secrecy requests are treated as a red flag on their own.",
-  },
-];
-
-const CHECK_CARDS = [
-  {
-    title: "Voice authenticity",
-    desc: "An acoustic model listens for AI-synthesis artifacts second-by-second across the call.",
-    icon: (
-      <path d="M9 18V5l12-2v13M9 13l12-2M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-    ),
-  },
-  {
-    title: "Speaker identity",
-    desc: "192-dimensional voice embeddings confirm whether the caller matches the person they claim to be.",
-    icon: <path d="M17.5 21a5.5 5.5 0 1 0-11 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />,
-  },
-  {
-    title: "Scam intent",
-    desc: "A multilingual pattern engine catches OTP, money & urgency requests across 7 Indian languages.",
-    icon: <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.4 8.6 8.6 0 0 1-4-1L3 20l1.1-4.5A8.4 8.4 0 0 1 12.5 3a8.38 8.38 0 0 1 8.5 8.5Z" />,
-  },
-  {
-    title: "Explainable fusion",
-    desc: "All three signals combine into one weighted, plain-language verdict — reasons included, never a black box.",
-    icon: <path d="M12 2 3 7l9 5 9-5-9-5ZM3 12l9 5 9-5M3 17l9 5 9-5" />,
-  },
-];
-
-const FAQS = [
-  {
-    q: "Is this actually detecting AI voices right now, or a demo?",
-    a: "By default the backend runs DETECTOR_ENGINE=mock, a deterministic placeholder that hashes the file instead of listening to it — built so the rest of the app works before a real model is wired in. Set DETECTOR_ENGINE=wav2vec2 in backend/.env for genuine acoustic analysis.",
-  },
-  {
-    q: "Is my voice, or the person I register, stored anywhere?",
-    a: "Registered voiceprints are stored as 192 numbers (an embedding) only — never raw audio — locally in .voiceprints.json, and optionally mirrored to Supabase if you've configured it.",
-  },
-  {
-    q: "Why does asking for an OTP and money together always get escalated?",
-    a: "It's a hard-coded override in the risk engine: a good voice clone can fool the acoustic check, but the request itself can't be faked. That combination forces at least a HIGH verdict no matter what the weighted score says.",
-  },
-  {
-    q: "Which languages does the scam-intent check understand?",
-    a: "Hindi, Tamil, Telugu, Kannada, Bengali, Marathi, Urdu, English, and Hinglish code-mixing — matched with a plain regex engine, no ML required.",
-  },
-];
-
 const TIERS = {
   low:      { label: "LOW",      color: "#059669", soft: "#ecfdf5", border: "#bfe9d4", action: "Allow the call" },
   medium:   { label: "MEDIUM",   color: "#b45309", soft: "#fffbeb", border: "#f3dda8", action: "Warn the user" },
@@ -284,15 +212,6 @@ export default function Home() {
     } finally { setLoading(false); }
   }
 
-  function scrollToTool() {
-    document.getElementById("analyze")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  function tryPattern(sample) {
-    setTranscript(sample); setAudioFile(null); setAudioName(""); setAudioURL(null); setResult(null); setError(null);
-    scrollToTool();
-  }
-
   function downloadJSON() {
     const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
@@ -324,101 +243,28 @@ export default function Home() {
   const canAnalyze = !!audioFile || !!transcript.trim();
 
   return (
-    <main className="flex-1">
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-8 sm:py-12">
       {/* Header */}
-      <header className="sticky top-0 z-20 border-b backdrop-blur" style={{ borderColor: "var(--border)", background: "rgba(255,255,255,0.85)" }}>
-        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="grid h-8 w-8 place-items-center rounded-lg text-white" style={{ background: "var(--accent)" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 19v3" />
-              </svg>
-            </div>
-            <span className="text-[15px] font-semibold tracking-tight">VoiceGuard AI</span>
+      <header className="mb-12 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="grid h-8 w-8 place-items-center rounded-lg text-white" style={{ background: "var(--accent)" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 19v3" />
+            </svg>
           </div>
-          <nav className="hidden items-center gap-6 text-sm sm:flex" style={{ color: "var(--muted)" }}>
-            <a href="#checks" className="hover:text-[var(--text)]">How it works</a>
-            <a href="#patterns" className="hover:text-[var(--text)]">Scam patterns</a>
-            <a href="#faq" className="hover:text-[var(--text)]">FAQ</a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <EngineBadge engine={engine} />
-            <button onClick={scrollToTool}
-              className="hidden rounded-full px-4 py-1.5 text-sm font-medium text-white sm:inline-flex"
-              style={{ background: "var(--accent)" }}>
-              Analyse a call
-            </button>
-          </div>
+          <span className="text-[15px] font-semibold tracking-tight">VoiceGuard AI</span>
         </div>
+        <EngineBadge engine={engine} />
       </header>
 
       {/* Hero */}
-      <section className="mx-auto w-full max-w-3xl px-6 pb-10 pt-16 text-center sm:pt-24">
-        <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium" style={{ borderColor: "var(--border-strong)", color: "var(--muted)" }}>
-          SIH26104 · India-first · explainable AI
-        </span>
-        <h1 className="mt-5 text-[32px] font-semibold leading-[1.12] tracking-tight sm:text-[52px]">
-          Catch voice-cloning
-          <br />scam calls before money moves
+      <section className="mb-9 text-center">
+        <h1 className="text-[30px] font-semibold leading-[1.12] tracking-tight sm:text-[42px]">
+          Catch voice-cloning scam calls
         </h1>
-        <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed sm:text-base" style={{ color: "var(--muted)" }}>
+        <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed" style={{ color: "var(--muted)" }}>
           Add a call recording and/or what the caller said. We check whether the voice is
           AI-cloned and whether the words are a scam — then give one clear risk verdict.
-        </p>
-        <div className="mt-7 flex items-center justify-center gap-3">
-          <button onClick={scrollToTool}
-            className="inline-flex min-h-[46px] items-center rounded-full px-6 text-[15px] font-medium text-white"
-            style={{ background: "var(--accent)" }}>
-            Analyse a call
-          </button>
-          <a href="#checks" className="inline-flex min-h-[46px] items-center rounded-full border px-6 text-[15px] font-medium" style={{ borderColor: "var(--border-strong)" }}>
-            See how it works
-          </a>
-        </div>
-
-        {/* Decorative hero panel */}
-        <div className="relative mt-12 overflow-hidden rounded-3xl" style={{ background: "var(--hero-grad)" }}>
-          <div className="flex flex-col items-center justify-center gap-6 px-6 py-16 sm:py-24">
-            <p className="max-w-md text-xl font-medium leading-snug text-white/90 sm:text-2xl">
-              &ldquo;Fraud shouldn&apos;t sound this convincing.&rdquo;
-            </p>
-            <div className="flex h-16 items-end justify-center gap-1.5">
-              {[0, 0.15, 0.3, 0.1, 0.25, 0.05, 0.2, 0.12, 0.28, 0.08].map((d, i) => (
-                <span key={i} className="eq-bar w-1.5 rounded-full bg-white/70" style={{ height: "100%", animationDelay: `${d}s` }} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Three checks, one verdict */}
-      <section id="checks" className="mx-auto w-full max-w-5xl scroll-mt-20 px-6 py-16 text-center">
-        <h2 className="text-[26px] font-semibold tracking-tight sm:text-[32px]">Three checks, one verdict</h2>
-        <p className="mx-auto mt-3 max-w-lg text-[15px]" style={{ color: "var(--muted)" }}>
-          Instead of trusting one acoustic classifier, VoiceGuard inspects voice, identity,
-          and intent together — then explains exactly why.
-        </p>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {CHECK_CARDS.map((c) => (
-            <div key={c.title} className="rounded-2xl border p-5 text-left" style={{ borderColor: "var(--border)" }}>
-              <div className="grid h-10 w-10 place-items-center rounded-full" style={{ background: "var(--bg-subtle)" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  {c.icon}
-                </svg>
-              </div>
-              <p className="mt-3 text-sm font-semibold">{c.title}</p>
-              <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: "var(--muted)" }}>{c.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Try it yourself — the actual analyzer tool, unchanged */}
-      <div id="analyze" className="mx-auto w-full max-w-2xl scroll-mt-16 px-6 py-4 sm:py-8">
-      <section className="mb-9 text-center">
-        <h2 className="text-[26px] font-semibold tracking-tight sm:text-[32px]">Try it yourself</h2>
-        <p className="mx-auto mt-3 max-w-lg text-[15px]" style={{ color: "var(--muted)" }}>
-          Upload a clip, record live, or just paste the transcript — no signup needed.
         </p>
       </section>
 
@@ -655,72 +501,8 @@ export default function Home() {
           </p>
         </section>
       )}
-      </div>
 
-      {/* Built for every scam pattern */}
-      <section id="patterns" className="mx-auto w-full max-w-5xl scroll-mt-20 px-6 py-16 text-center">
-        <h2 className="text-[26px] font-semibold tracking-tight sm:text-[32px]">Built for every scam pattern</h2>
-        <p className="mx-auto mt-3 max-w-lg text-[15px]" style={{ color: "var(--muted)" }}>
-          Real patterns from the intent engine — try one and see the verdict for yourself.
-        </p>
-        <div className="mt-10 grid gap-5 text-left sm:grid-cols-3">
-          {PATTERN_CARDS.map((c) => (
-            <div key={c.title} className="flex flex-col rounded-2xl border p-5"
-              style={{
-                background: c.tone === "blue" ? "var(--card-blue)" : c.tone === "orange" ? "var(--card-orange)" : "var(--card-green)",
-                borderColor: c.tone === "blue" ? "var(--card-blue-border)" : c.tone === "orange" ? "var(--card-orange-border)" : "var(--card-green-border)",
-              }}>
-              <p className="text-[15px] font-semibold">{c.title}</p>
-              <p className="mt-2 text-[13px] leading-relaxed" style={{ color: "var(--muted)" }}>{c.desc}</p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {c.tags.map((t) => (
-                  <span key={t} className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-medium" style={{ color: "var(--text)" }}>
-                    {t.replace(/_/g, " ")}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-3 text-[12px] italic leading-relaxed" style={{ color: "var(--muted)" }}>{c.note}</p>
-              <button onClick={() => tryPattern(c.sample)}
-                className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-medium shadow-sm">
-                Try this example →
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="mx-auto w-full max-w-2xl scroll-mt-20 px-6 py-16">
-        <h2 className="text-center text-[26px] font-semibold tracking-tight sm:text-[32px]">Frequently asked questions</h2>
-        <div className="mt-8 space-y-2">
-          {FAQS.map((f) => (
-            <details key={f.q} className="group rounded-2xl border p-4" style={{ borderColor: "var(--border)" }}>
-              <summary className="cursor-pointer list-none text-sm font-medium marker:content-none">
-                <span className="flex items-center justify-between gap-3">
-                  {f.q}
-                  <span className="shrink-0 text-lg leading-none transition-transform group-open:rotate-45" style={{ color: "var(--faint)" }}>+</span>
-                </span>
-              </summary>
-              <p className="mt-2 text-[13px] leading-relaxed" style={{ color: "var(--muted)" }}>{f.a}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-
-      {/* Bottom CTA */}
-      <section className="mx-auto w-full max-w-5xl px-6 pb-16">
-        <div className="flex flex-col items-center gap-5 rounded-3xl px-6 py-16 text-center" style={{ background: "var(--cta-grad)" }}>
-          <h2 className="max-w-md text-2xl font-semibold leading-snug text-white sm:text-3xl">
-            Don&apos;t let a cloned voice cost you.
-          </h2>
-          <button onClick={scrollToTool}
-            className="inline-flex min-h-[46px] items-center rounded-full bg-white px-6 text-[15px] font-medium text-black">
-            Analyse a call
-          </button>
-        </div>
-      </section>
-
-      <footer className="border-t px-6 py-10 text-center text-xs" style={{ borderColor: "var(--border)", color: "var(--faint)" }}>
+      <footer className="mt-auto pt-16 text-center text-xs" style={{ color: "var(--faint)" }}>
         SIH26104 · VoiceGuard AI · fake-voice + scam-intent → risk · runs locally
       </footer>
     </main>
